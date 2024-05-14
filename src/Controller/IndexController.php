@@ -1,5 +1,6 @@
 <?php
 namespace App\Controller;
+use App\Form\CategoryType;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
@@ -11,17 +12,39 @@ use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\Extension\Core\Type\SubmitType;
 use App\Form\ArticleType;
 use App\Entity\Category;
-use App\Form\CategoryType;
+use App\Entity\PropertySearch;
+use App\Form\PropertySearchType;
+use App\Entity\CategorySearch;
+use App\Form\CategorySearchType;
+use App\Entity\PriceSearch;
+use App\Form\PriceSearchType;
 class IndexController extends AbstractController
 {
    #[Route('/',name:'article_list')]
-   public function home(EntityManagerInterface  $entityManager): Response
-   {
-       $articles = $entityManager->getRepository(Article::class)->findAll();
-       return $this->render('article/index.html.twig',['article'=> $articles]);
-   }
+   public function home(Request $request ,PersistenceManagerRegistry $managerRegistry)
+  {
+  $propertySearch = new PropertySearch();
+  $form = $this->createForm(PropertySearchType::class,$propertySearch);
+  $form->handleRequest($request);
+  //initialement le tableau des articles est vide,
+  //c.a.d on affiche les articles que lorsque l'utilisateur
+  //clique sur le bouton rechercher
+  $articles= [];
+ 
+  if($form->isSubmitted() && $form->isValid()) {
+  //on récupère le nom d'article tapé dans le formulaire
+  $Nom = $propertySearch->getNom();
+  if ($Nom!="")
+  //si on a fourni un nom d'article on affiche tous les articles ayant ce nom
+  $articles= $managerRegistry->getRepository(Article::class)->findBy(['Nom' => $Nom] );
+  else
+  //si si aucun nom n'est fourni on affiche tous les articles
+  $articles= $managerRegistry->getRepository(Article::class)->findAll();
+  }
+  return $this->render('article/index.html.twig',[ 'form' =>$form->createView(), 'article' => $articles]);
+  }
 
-   #[Route('/new', name: 'new_article', methods:['GET','POST'])]
+  #[Route('/new', name: 'new_article', methods:['GET','POST'])]
     public function new(PersistenceManagerRegistry $managerRegistry,Request $request)  {
       $article = new Article();
       $form = $this->createForm(ArticleType::class,$article);
@@ -36,8 +59,6 @@ class IndexController extends AbstractController
     }
     return $this->render('article/new.html.twig',['form' => $form->createView()]);
   }
-     
- 
 
      #[Route('/save', name: 'save-article')]
  public function save(PersistenceManagerRegistry $doctrine){
@@ -113,6 +134,47 @@ public function newCategory(PersistenceManagerRegistry $managerRegistry,Request 
   }
   return $this->render('catego/newCategory.html.twig',['form'=> $form->createView()]);
 
+}
+
+#[Route('/art_cat/', name: 'article_par_cat', methods:['GET','POST'])]
+public function articlesParCategorie(Request $request,PersistenceManagerRegistry $managerRegistry) {
+  $categorySearch = new CategorySearch();
+  $form = $this->createForm(CategorySearchType::class,$categorySearch);
+  $form->handleRequest($request);
+  $articles= [];
+  if($form->isSubmitted() && $form->isValid()) {
+    $category = $categorySearch->getCategory();
+   
+    if ($category!="")
+   $articles= $category->getArticles();
+    else
+    $articles= $managerRegistry->getRepository(Article::class)->findAll();
+    }
+   
+    return $this->render('article/articlesParCategorie.html.twig',['form' => $form->createView(),'articles' => $articles]);
+    }
+   
+
+/**
+ * @Route("/art_prix/", name="article_par_prix")
+ * Method({"GET"})
+ */
+#[Route('/art_prix/', name: 'article_par_prix', methods:['GET','POST'])]
+public function articlesParPrix(Request $request,PersistenceManagerRegistry $managerRegistry)
+{
+
+$priceSearch = new PriceSearch();
+$form = $this->createForm(PriceSearchType::class,$priceSearch);
+$form->handleRequest($request);
+$articles= [];
+if($form->isSubmitted() && $form->isValid()) {
+$minPrice = $priceSearch->getMinPrice();
+$maxPrice = $priceSearch->getMaxPrice();
+
+$articles= $managerRegistry->
+getRepository(Article::class)->findByPriceRange($minPrice,$maxPrice);
+}
+return $this->render('article/articlesParPrix.html.twig',[ 'form' =>$form->createView(), 'article' => $articles]);
 }
 
 
