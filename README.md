@@ -1,6 +1,4 @@
-Here’s a Git project description for your **Article Management System** project:
 
----
 
 ### **Article Management System**
 
@@ -76,6 +74,3 @@ This project is an **Article Management System** built using **Symfony**. It pro
 - **Categories**: Categories can be created and assigned to articles.
 - **Searching**: Use the search form to filter articles by name, price range, or category.
 
----
-
-This description provides a brief overview of the project, its features, and how to set it up. You can customize it further based on specific details like UI design or extra functionalities.
